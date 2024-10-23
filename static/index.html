@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rule Engine</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f0f2f5;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            min-height: 100vh;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 20px;
+            margin-top: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 600px;
+        }
+
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+
+        h2 {
+            color: #444;
+            font-size: 20px;
+            margin-bottom: 10px;
+        }
+
+        .form-group {
+            margin-bottom: 30px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+
+        input[type="text"],
+        textarea {
+            width: 100%;
+            padding: 10px;
+            font-size: 16px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+
+        textarea {
+            height: 100px;
+            resize: vertical;
+        }
+
+        button {
+            background-color: #28a745;
+            color: white;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+
+        button:hover {
+            background-color: #218838;
+        }
+
+        pre {
+            background-color: #f1f1f1;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            font-size: 14px;
+        }
+
+        #combine_result {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            border: 1px solid #ddd;
+        }
+
+        .result-container {
+            margin-top: 10px;
+        }
+    </style>
+    <script>
+        async function createRule() {
+            const ruleString = document.getElementById("rule").value.trim();
+            if (!ruleString) {
+                alert("Please enter a rule!");
+                return;
+            }
+
+            try {
+                const response = await fetch("/create_rule", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ rule: ruleString })
+                });
+
+                const result = await response.json();
+                document.getElementById("created_rule_ast").innerText = JSON.stringify(result, null, 2);
+                alert("Rule created successfully!");
+            } catch (error) {
+                alert("Error creating rule.");
+                console.error(error);
+            }
+        }
+
+        async function combineRules() {
+            const ruleIds = document.getElementById("rule_ids").value.split(",").map(id => id.trim()).filter(id => id);
+            if (ruleIds.length === 0) {
+                alert("Please enter valid Rule IDs.");
+                return;
+            }
+
+            try {
+                const response = await fetch("/combine_rules", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ rule_ids: ruleIds })
+                });
+
+                const result = await response.json();
+                document.getElementById("combine_result").innerText = JSON.stringify(result, null, 2);
+            } catch (error) {
+                alert("Error combining rules.");
+                console.error(error);
+            }
+        }
+
+        async function evaluateRule() {
+            try {
+                const ast = JSON.parse(document.getElementById("ast").value.trim());
+                const data = JSON.parse(document.getElementById("data").value.trim());
+                
+                const response = await fetch("/evaluate_rule", {
+                    method: "POST",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify({ ast, data })
+                });
+
+                const result = await response.json();
+                alert("Evaluation result: " + JSON.stringify(result, null, 2));
+            } catch (error) {
+                alert("Error during rule evaluation.");
+                console.error("Evaluation error:", error);
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="container">
+        <h1>Rule Engine</h1>
+
+        <div class="form-group">
+            <h2>Create Rule</h2>
+            <label for="rule">Enter Rule</label>
+            <input type="text" id="rule" placeholder="Enter Rule">
+            <button onclick="createRule()">Create Rule</button>
+            <div class="result-container">
+                <h3>Created Rule AST</h3>
+                <pre id="created_rule_ast"></pre>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <h2>Combine Rules</h2>
+            <label for="rule_ids">Enter Rule IDs (comma separated)</label>
+            <input type="text" id="rule_ids" placeholder="Enter Rule IDs">
+            <button onclick="combineRules()">Combine Rules</button>
+            <div id="combine_result" class="result-container"></div>
+        </div>
+
+        <div class="form-group">
+            <h2>Evaluate Rule</h2>
+            <label for="ast">Enter AST (JSON format)</label>
+            <textarea id="ast" placeholder="Enter AST in JSON"></textarea>
+            <label for="data">Enter Data (JSON format)</label>
+            <textarea id="data" placeholder="Enter Data in JSON"></textarea>
+            <button onclick="evaluateRule()">Evaluate Rule</button>
+        </div>
+    </div>
+</body>
+</html>
