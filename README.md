@@ -1,206 +1,459 @@
 # Rule Engine with AST
 
-A Flask-based rule engine application that uses Abstract Syntax Trees (AST) to create, combine, and evaluate conditional rules. The system provides a simple web interface for managing rules and evaluating them against user data.
+## Project Overview
 
-## Features
+A simple 3-tier rule engine application(Simple UI, API and Backend, Data) to determine user eligibility based on attributes like age, department, income, spend etc.The system can use Abstract Syntax Tree (AST) to represent conditional rules and allow for dynamic creation,combination, and modification of these rules.
 
-- Create rules using a simple string syntax
-- Combine multiple rules into a single AST
-- Evaluate rules against JSON data
-- Web interface for rule management
-- MongoDB backend for rule storage
-- Support for complex boolean operations (AND, OR)
-- Error handling for invalid rule formats
+### Key Features
+- Visual rule creation through web interface
+- RESTful API for programmatic rule management
+- Dynamic rule combination using AST
+- Real-time rule evaluation
+- MongoDB persistence
+- Complex conditional logic support (AND/OR operations)
+- Comprehensive error handling and validation
 
-## Architecture
+## System Architecture
 
-### Frontend
-- HTML/CSS for the user interface
-- JavaScript for API interactions
-- Simple and intuitive form-based interface
+### Three-Tier Architecture
+1. **Presentation Layer (Frontend)**
+   - Web interface built with HTML, CSS, and JavaScript
+   - Intuitive forms for rule creation and evaluation
+   - Real-time result visualization
 
-### Backend
-- Flask web framework
-- MongoDB for rule storage
-- Custom AST implementation for rule processing
+2. **Application Layer (Backend)**
+   - Flask-based RESTful API
+   - AST implementation for rule processing
+   - Rule combination logic
+   - Data validation and error handling
 
-### Data Structure
-The system uses a Node-based AST structure:
-```python
-class Node:
-    def __init__(self, type, value=None, left=None, right=None):
-        self.type = type      # "operator" or "operand"
-        self.value = value    # operator (AND/OR) or condition
-        self.left = left      # left child node
-        self.right = right    # right child node
+3. **Data Layer**
+   - MongoDB for rule storage
+   - Efficient document-based schema
+   - Persistent rule management
+
+### Component Diagram
+```
+[Web Interface] ←→ [Flask API] ←→ [MongoDB]
+     ↑               ↑
+     |               |
+[User Input]    [Rule Processing]
+                [AST Management]
 ```
 
 ## Prerequisites
 
-- Python 3.7+
-- MongoDB
-- pip (Python package manager)
+### System Requirements
+- Python 3.8+
+- MongoDB 4.4+
+- Modern web browser
+- Postman (for API testing)
 
-## Installation
+### Required Python Packages
+```
+Flask>=2.2.5
+flask-sqlalchemy>=3.1.1
+pymongo
+```
 
-1. Clone the repository:
+## Installation Guide
+
+1. **Clone Repository**
 ```bash
 git clone https://github.com/yourusername/rule-engine.git
 cd rule-engine
 ```
 
-2. Create a virtual environment:
+2. **Set Up Virtual Environment**
 ```bash
 python -m venv venv
-source venv/bin/activate  # On Windows: venv\Scripts\activate
+source venv/bin/activate  # Windows: venv\Scripts\activate
 ```
 
-3. Install dependencies:
+3. **Install Dependencies**
 ```bash
 pip install -r requirements.txt
 ```
 
-4. Ensure MongoDB is running locally on port 27017
-
-## Project Structure
-
-```
-rule-engine/
-├── static/
-│   └── index.html
-├── app.py
-├── requirements.txt
-└── README.md
-```
-
-## Running the Application
-
-1. Start MongoDB:
+4. **Configure MongoDB**
 ```bash
-mongod
+# Start MongoDB service
+mongod --dbpath /your/data/path
+
+# Verify MongoDB connection
+mongo
+> use rule_engine
 ```
 
-2. Run the Flask application:
+5. **Start Application**
 ```bash
 python app.py
 ```
 
-3. Access the web interface at `http://localhost:5000`
+## Detailed Testing Guide
 
-## API Endpoints
+### 1. Web Interface Testing
 
-### 1. Create Rule
-- **Endpoint:** `/create_rule`
-- **Method:** POST
-- **Input:**
-```json
-{
-    "rule": "age > 30 AND department = 'Sales'"
-}
+#### A. Creating a Complex Rule
+1. Open `http://localhost:5000` in your browser
+2. Navigate to "Create Rule" section
+3. Enter the following complex rule:
+```
+((age > 30 AND department == 'Sales') OR (age < 25 AND department == 'Marketing')) AND (salary > 50000 OR experience > 5)
 ```
 
-### 2. Combine Rules
-- **Endpoint:** `/combine_rules`
-- **Method:** POST
-- **Input:**
+**Expected Result:**
 ```json
 {
-    "rule_ids": ["rule_id_1", "rule_id_2"]
-}
-```
-
-### 3. Evaluate Rule
-- **Endpoint:** `/evaluate_rule`
-- **Method:** POST
-- **Input:**
-```json
-{
-    "ast": {
+  "status": "Rule created",
+  "rule_id": "60d5ec49cbe1234567890abc",
+  "rule": "((age > 30 AND department == 'Sales') OR (age < 25 AND department == 'Marketing')) AND (salary > 50000 OR experience > 5)",
+  "ast": {
+    "type": "operator",
+    "value": "AND",
+    "left": {
+      "type": "operator",
+      "value": "OR",
+      "left": {
         "type": "operator",
         "value": "AND",
-        "left": {...},
-        "right": {...}
+        "left": {
+          "type": "operand",
+          "value": "age > 30"
+        },
+        "right": {
+          "type": "operand",
+          "value": "department == 'Sales'"
+        }
+      },
+      "right": {
+        "type": "operator",
+        "value": "AND",
+        "left": {
+          "type": "operand",
+          "value": "age < 25"
+        },
+        "right": {
+          "type": "operand",
+          "value": "department == 'Marketing'"
+        }
+      }
     },
-    "data": {
-        "age": 35,
-        "department": "Sales",
-        "salary": 60000,
-        "experience": 3
+    "right": {
+      "type": "operator",
+      "value": "OR",
+      "left": {
+        "type": "operand",
+        "value": "salary > 50000"
+      },
+      "right": {
+        "type": "operand",
+        "value": "experience > 5"
+      }
     }
+  }
 }
 ```
 
-## Rule Format
-
-Rules should follow this format:
-- Simple conditions: `attribute operator value`
-- Complex rules: `condition1 AND/OR condition2`
-
-Example:
+#### B. Combining Multiple Rules
+1. In the "Combine Rules" section, enter the following rule IDs:
 ```
-((age > 30 AND department = 'Sales') OR (age < 25 AND department = 'Marketing')) AND (salary > 50000 OR experience > 5)
+60d5ec49cbe1234567890abc,60d5ec49cbe1234567890def
 ```
 
-## Database Schema
-
-MongoDB collection structure:
+**Expected Result:**
 ```json
 {
-    "rules": {
-        "rule_string": "((age > 30 AND department = 'Sales') OR (age < 25 AND department = 'Marketing')) AND (salary > 50000 OR experience > 5)",
-        "ast": {
-            "type": "operator",
-            "value": "AND",
-            "left": {...},
-            "right": {...}
-        }
+  "status": "Rules combined",
+  "combined_rule_id": "60d5ec49cbe1234567890ghi",
+  "operator": "AND",
+  "combined_ast": {
+    "type": "operator",
+    "value": "AND",
+    "left": {
+       //First rule AST
+    },
+    "right": {
+       //Second rule AST
     }
+  }
 }
 ```
 
-## Error Handling
+#### C. Evaluating Complex Rules
+1. In the "Evaluate Rule" section, enter the following AST:
+```json
+{
+  "type": "operator",
+  "value": "AND",
+  "left": {
+    "type": "operator",
+    "value": "OR",
+    "left": {
+      "type": "operator",
+      "value": "AND",
+      "left": {
+        "type": "operand",
+        "value": "age > 30"
+      },
+      "right": {
+        "type": "operand",
+        "value": "department == 'Sales'"
+      }
+    },
+    "right": {
+      "type": "operator",
+      "value": "AND",
+      "left": {
+        "type": "operand",
+        "value": "age < 25"
+      },
+      "right": {
+        "type": "operand",
+        "value": "department == 'Marketing'"
+      }
+    }
+  },
+  "right": {
+    "type": "operator",
+    "value": "OR",
+    "left": {
+      "type": "operand",
+      "value": "salary > 50000"
+    },
+    "right": {
+      "type": "operand",
+      "value": "experience > 5"
+    }
+  }
+}
+```
 
-The application includes error handling for:
-- Invalid rule syntax
-- Missing or malformed data
-- Database connection issues
-- Invalid MongoDB ObjectIDs
-- AST evaluation errors
+2. Enter the following test data:
+```json
+{
+  "age": 32,
+  "department": "Sales",
+  "salary": 60000,
+  "experience": 6
+}
+```
 
-## Testing
+**Expected Result:**
+```json
+{
+  "result": true,
+  "evaluation_details": {
+    "conditions_met": [
+      "age > 30",
+      "department == 'Sales'",
+      "salary > 50000",
+      "experience > 5"
+    ],
+    "final_result": true
+  }
+}
+```
 
-To test the application:
-1. Create individual rules using the web interface
-2. Try combining multiple rules
-3. Test evaluation with different data sets
-4. Verify error handling with invalid inputs
+### 2. API Testing with Postman
 
-## Limitations and Future Improvements
+#### A. Complex Rule Creation Test
+**Request:**
+```http
+POST http://localhost:5000/create_rule
+Content-Type: application/json
 
-- Currently supports basic comparison operators (>, <, =)
-- Limited to AND/OR logical operators
-- No user authentication/authorization
-- No rule versioning
-- No support for custom functions
+{
+  "rule": "((age > 30 AND department == 'Sales') OR (age < 25 AND department == 'Marketing')) AND (salary > 50000 OR experience > 5)"
+}
+```
 
-Future improvements could include:
-- Support for more complex operators
-- Rule versioning system
-- User authentication
-- Custom function support
-- Rule validation against attribute catalogs
-- Rule modification capabilities
-- Performance optimizations for large rule sets
+**Response:**
+```json
+{
+  "status": "Rule created",
+  "rule_id": "60d5ec49cbe1234567890abc",
+  "ast": {
+    // Full AST structure as shown above
+  }
+}
+```
 
-## Dependencies
+#### B. Rule Combination Test
+**Request:**
+```http
+POST http://localhost:5000/combine_rules
+Content-Type: application/json
 
-Core dependencies:
-- Flask>=2.2.5
-- flask-sqlalchemy>=3.1.1
-- pymongo
+{
+  "rule_ids": [
+    "60d5ec49cbe1234567890abc",
+    "60d5ec49cbe1234567890def"
+  ],
+  "operator": "AND"
+}
+```
+
+**Response:**
+```json
+{
+  "status": "Rules combined",
+  "combined_rule_id": "60d5ec49cbe1234567890ghi",
+  "combined_ast": {
+   //Combined AST structure
+  }
+}
+```
+
+#### C. Rule Evaluation Test
+**Request:**
+```http
+POST http://localhost:5000/evaluate_rule
+Content-Type: application/json
+
+{
+  "ast": {
+    //Full AST structure as shown above
+  },
+  "data": {
+    "age": 32,
+    "department": "Sales",
+    "salary": 60000,
+    "experience": 6
+  }
+}
+```
+
+**Response:**
+```json
+{
+  "result": true,
+  "evaluation_path": [
+    {
+      "condition": "age > 30",
+      "result": true
+    },
+    {
+      "condition": "department == 'Sales'",
+      "result": true
+    },
+    {
+      "condition": "salary > 50000",
+      "result": true
+    },
+    {
+      "condition": "experience > 5",
+      "result": true
+    }
+  ]
+}
+```
+## Error Response Examples
+
+### 1. Invalid Rule Syntax
+```json
+{
+  "status": "Failed",
+  "error": "Invalid rule syntax: Missing operator between conditions",
+  "details": {
+    "position": 15,
+    "found": "department",
+    "expected": ["AND", "OR"]
+  }
+}
+```
+
+### 2. Invalid Rule Combination
+```json
+{
+  "status": "Failed",
+  "error": "Invalid rule combination request",
+  "details": {
+    "message": "Rule ID not found: 60d5ec49cbe1234567890abc",
+    "valid_ids": ["60d5ec49cbe1234567890def"]
+  }
+}
+```
+
+### 3. Invalid Evaluation Data
+```json
+{
+  "status": "Failed",
+  "error": "Invalid evaluation data",
+  "details": {
+    "missing_fields": ["salary", "experience"],
+    "required_fields": ["age", "department", "salary", "experience"]
+  }
+}
+```
+
+[Rest of the sections remain the same]
+
+Would you like me to add more specific test cases or expand any particular section further?
+
+## Performance Considerations
+
+1. **AST Optimization**
+   - Minimizes tree depth
+   - Reduces redundant nodes
+   - Optimizes evaluation path
+
+2. **Database Indexing**
+   ```javascript
+   db.rules.createIndex({"created_at": 1})
+   db.rules.createIndex({"rule_string": 1})
+   ```
+
+## Security Measures
+
+1. Input Validation
+   - Rule string sanitization
+   - JSON schema validation
+   - MongoDB injection prevention
+
+2. Safe Evaluation
+   - Restricted eval environment
+   - Sanitized data access
+   - Error boundary implementation
+
+## Troubleshooting Guide
+
+### Common Issues and Solutions
+
+1. **MongoDB Connection Failed**
+   ```bash
+   # Check MongoDB service
+   sudo service mongod status
+   
+   # Verify connection string
+   mongo --eval "db.serverStatus()"
+   ```
+
+2. **Invalid Rule Syntax**
+   - Verify operators (AND, OR)
+   - Check condition format
+   - Ensure proper parentheses
+
+3. **Rule Evaluation Failed**
+   - Validate data format
+   - Check AST structure
+   - Verify attribute names
+
+
+
 ##Result
 
-https://github.com/user-attachments/assets/4b429918-d1f9-4962-848c-8954b8c122e3
 
 
 
+https://github.com/user-attachments/assets/c7b9f0e4-ad5a-4901-851b-2dc1f8a6bbda
+
+
+
+## Contributing
+
+1. Fork repository
+2. Create feature branch
+3. Implement changes
+4. Add tests
+5. Submit pull request
