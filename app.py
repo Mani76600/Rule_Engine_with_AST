@@ -7,7 +7,7 @@ import os
 app = Flask(__name__)
 
 # MongoDB setup
-client = MongoClient('mongodb://localhost:27017/')
+client = MongoClient('mongodb://localhost:/')
 db = client['rule_engine']
 rules_collection = db['rules']
 
